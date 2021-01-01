@@ -1,0 +1,59 @@
+---
+- name: Create mount points
+  file:
+    path: "{{ item }}"
+    state: directory
+  loop: "{{ composes | json_query('*.mounts.*.local') | flatten }}"
+
+- name: Mount volumes
+  mount:
+    path: "{{ item.local }}"
+    src: "{{ item.remote }}"
+    fstype: nfs
+    state: mounted
+  loop: "{{ composes | json_query('*.mounts.*') | flatten }}"
+  loop_control:
+    label: "{{ item.remote | default('No remote mount') }} -> {{ item.local }}"
+  when: item.remote is defined
+
+# TODO: Fix for Ubuntu or move to firewall role
+- name: Open ports
+  ansible.posix.firewalld:
+    zone: public
+    port: "{{ item.host }}/{{ item.protocol }}"
+    immediate: yes
+    permanent: yes
+    state: enabled
+  loop: "{{ composes | json_query('*.ports.*') | flatten }}"
+  loop_control:
+    label: "{{ item.host | default ('No host port') }}/{{ item.protocol }}"
+  when: (ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux') and item.host is defined
+- name: Create config folder
+  file:
+    path: "{{ config_path }}"
+    state: directory
+
+- name: Build compose files
+  template:
+    src: "{{ item.0 }}.yml.j2"
+    dest: "{{ config_path }}/{{ item.0 }}.yml"
+    mode: "0600"
+  loop: "{{ composes|dictsort }}"
+  loop_control:
+    label: "{{ item.0 }}"
+
+- name: Create traefik network
+  docker_network:
+    name: "{{ traefik_network }}"
+
+- name: Create and start services
+  docker_compose:
+    project_name: "{{ item.0 }}"
+    project_src: "{{ config_path }}"
+    files:
+      - "{{ item.0 }}.yml"
+  loop: "{{ composes|dictsort }}"
+  loop_control:
+    label: "{{ item.0 }}"
+  async: "{{ docker_timeout }}"
+  poll: 5

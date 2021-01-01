@@ -1,0 +1,57 @@
+version: '2'
+
+networks:
+  traefik:
+    external:
+      name: "{{ traefik_network }}"
+  dns:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.16.238.0/24
+          gateway: 172.16.238.1
+
+services:
+  pihole:
+    container_name: "{{ composes.pihole.names.dns }}"
+    image: "{{ composes.pihole.images.dns }}:{{ composes.pihole.versions.dns }}"
+    networks:
+      traefik:
+      dns:
+        ipv4_address: 172.16.238.11 
+    ports:
+      - "{{ composes.pihole.ports.dns_tcp.ip }}:{{ composes.pihole.ports.dns_tcp.host }}:{{ composes.pihole.ports.dns_tcp.container }}/{{ composes.pihole.ports.dns_tcp.protocol }}"
+      - "{{ composes.pihole.ports.dns_tcp.ip }}:{{ composes.pihole.ports.dns_udp.host }}:{{ composes.pihole.ports.dns_udp.container }}/{{ composes.pihole.ports.dns_udp.protocol }}"
+    environment:
+      DNS1: "172.16.238.12#{{ composes.pihole.ports.doh.container }}"
+      WEBPASSWORD: "{{ composes.pihole.password }}"
+      VIRTUAL_HOST: "{{ composes.pihole.domain }}"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network={{ traefik_network }}"
+      - "traefik.http.routers.pihole.rule=Host(`{{ composes.pihole.domain }}`)"
+      - "traefik.http.routers.pihole.tls=true"
+      - "traefik.http.routers.pihole.tls.certresolver=letsencrypt"
+      - "traefik.http.services.pihole.loadbalancer.server.port={{ composes.pihole.http_port }}"
+
+    volumes:
+      - "{{ composes.pihole.mounts.dns.local }}/etc/pihole/:/etc/pihole/"
+      - "{{ composes.pihole.mounts.dns.local }}/etc/dnsmasq.d/:/etc/dnsmasq.d/"
+    dns:
+      - 127.0.0.1
+      - 1.1.1.3
+      - 1.0.0.3
+    depends_on:
+      - "{{ composes.pihole.names.doh }}"
+    restart: always
+
+  cloudflared:
+    container_name: "{{ composes.pihole.names.doh }}"
+    image: "{{ composes.pihole.images.doh }}:{{ composes.pihole.versions.doh }}"
+    networks:
+      traefik:
+      dns:
+        ipv4_address: 172.16.238.12
+    command: "proxy-dns --port {{ composes.pihole.ports.doh.container }} --upstream {{ composes.pihole.upstream_1 }} --upstream {{ composes.pihole.upstream_2 }} --address=0.0.0.0"
+    restart: always

@@ -1,0 +1,4 @@
+---
+config_path: /etc/ansible-role-docker-compose
+traefik_network: traefik
+docker_timeout: 1800
