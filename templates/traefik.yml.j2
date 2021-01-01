@@ -11,12 +11,16 @@ services:
       - "--entrypoints.https.address=:{{ composes.traefik.ports.https.container }}"
       - --providers.docker
       - --providers.docker.exposedByDefault=false
+{% if composes.traefik.provider_file is defined %}
+      - "--providers.file=true"
+      - "--providers.file.filename={{ composes.traefik.mounts.app.container }}/{{ composes.traefik.provider_file }}"
+{% endif %}
       - --api
       - "--certificatesresolvers.letsencrypt.acme.email={{ composes.traefik.le_email }}"
       - --certificatesresolvers.letsencrypt.acme.dnsChallenge=true
       - --certificatesresolvers.letsencrypt.acme.dnschallenge.provider=digitalocean
       - "--certificatesresolvers.letsencrypt.acme.dnschallenge.resolvers={{ composes.traefik.resolver1 }},{{ composes.traefik.resolver2 }}"
-      - --certificatesresolvers.letsencrypt.acme.storage=/traefik/acme.json
+      - --certificatesresolvers.letsencrypt.acme.storage={{ composes.traefik.mounts.app.container }}/acme.json
       - --log.level=debug
     ports:
       #- "{{ composes.traefik.ports.http.host }}:{{ composes.traefik.ports.http.container }}"
@@ -25,7 +29,10 @@ services:
       - traefik
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
-      - "{{ composes.traefik.mounts.app.local }}/{{ ansible_host }}:/traefik"
+      - "{{ composes.traefik.mounts.app.local }}/{{ ansible_host }}:{{ composes.traefik.mounts.app.container }}{{ composes.traefik.selinux | default('') }}"
+{% if composes.traefik.selinux is defined %}
+    privileged: true
+{% endif %}
     environment:
       - "DO_AUTH_TOKEN={{ composes.traefik.do_token }}"
     restart: unless-stopped

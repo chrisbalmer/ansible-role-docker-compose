@@ -1,4 +1,6 @@
 ---
+- include: docker.yml
+
 - name: Create mount points
   file:
     path: "{{ item }}"

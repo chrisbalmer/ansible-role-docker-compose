@@ -36,8 +36,8 @@ services:
       - "traefik.http.services.pihole.loadbalancer.server.port={{ composes.pihole.http_port }}"
 
     volumes:
-      - "{{ composes.pihole.mounts.dns.local }}/etc/pihole/:/etc/pihole/"
-      - "{{ composes.pihole.mounts.dns.local }}/etc/dnsmasq.d/:/etc/dnsmasq.d/"
+      - "{{ composes.pihole.mounts.dns.local }}/etc/pihole/:/etc/pihole/{{ composes.pihole.selinux | default('') }}"
+      - "{{ composes.pihole.mounts.dns.local }}/etc/dnsmasq.d/:/etc/dnsmasq.d/{{ composes.pihole.selinux | default('') }}"
     dns:
       - 127.0.0.1
       - "{{ composes.pihole.bootstrap_dns_1 }}"
