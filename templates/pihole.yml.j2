@@ -9,8 +9,8 @@ networks:
     ipam:
       driver: default
       config:
-        - subnet: 172.16.238.0/24
-          gateway: 172.16.238.1
+        - subnet: "{{ composes.pihole.dns_network.subnet }}"
+          gateway: "{{ composes.pihole.dns_network.gateway }}"
 
 services:
   pihole:
@@ -19,12 +19,12 @@ services:
     networks:
       traefik:
       dns:
-        ipv4_address: 172.16.238.11 
+        ipv4_address: "{{ composes.pihole.dns_network.pihole_ip }}" 
     ports:
       - "{{ composes.pihole.ports.dns_tcp.ip }}:{{ composes.pihole.ports.dns_tcp.host }}:{{ composes.pihole.ports.dns_tcp.container }}/{{ composes.pihole.ports.dns_tcp.protocol }}"
       - "{{ composes.pihole.ports.dns_tcp.ip }}:{{ composes.pihole.ports.dns_udp.host }}:{{ composes.pihole.ports.dns_udp.container }}/{{ composes.pihole.ports.dns_udp.protocol }}"
     environment:
-      DNS1: "172.16.238.12#{{ composes.pihole.ports.doh.container }}"
+      DNS1: "{{ composes.pihole.dns_network.containerd_ip }}#{{ composes.pihole.ports.doh.container }}"
       WEBPASSWORD: "{{ composes.pihole.password }}"
       VIRTUAL_HOST: "{{ composes.pihole.domain }}"
     labels:
@@ -40,8 +40,8 @@ services:
       - "{{ composes.pihole.mounts.dns.local }}/etc/dnsmasq.d/:/etc/dnsmasq.d/"
     dns:
       - 127.0.0.1
-      - 1.1.1.3
-      - 1.0.0.3
+      - "{{ composes.pihole.bootstrap_dns_1 }}"
+      - "{{ composes.pihole.bootstrap_dns_2 }}"
     depends_on:
       - "{{ composes.pihole.names.doh }}"
     restart: always
@@ -52,6 +52,6 @@ services:
     networks:
       traefik:
       dns:
-        ipv4_address: 172.16.238.12
+        ipv4_address: "{{ composes.pihole.dns_network.containerd_ip }}"
     command: "proxy-dns --port {{ composes.pihole.ports.doh.container }} --upstream {{ composes.pihole.upstream_1 }} --upstream {{ composes.pihole.upstream_2 }} --address=0.0.0.0"
     restart: always
