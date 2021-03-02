@@ -12,7 +12,7 @@
   when: registry_server and registry_port is not defined
 
 - name: Log into private registry
-  community.general.docker_login:
+  docker_login:
     registry_url: "{{ registry_url }}"
     username: "{{ registry_username }}"
     password: "{{ registry_password }}"
