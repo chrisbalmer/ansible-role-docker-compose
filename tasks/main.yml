@@ -45,11 +45,11 @@
     label: "{{ item.0 }}"
 
 - name: Create traefik network
-  docker_network:
+  community.docker.docker_network:
     name: "{{ traefik_network }}"
 
 - name: Create and start services
-  docker_compose:
+  community.docker.docker_compose:
     project_name: "{{ item.0 }}"
     project_src: "{{ config_path }}"
     files:
