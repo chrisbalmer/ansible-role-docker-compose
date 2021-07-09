@@ -9,11 +9,12 @@ services:
     command:
       - "--entrypoints.http.address=:{{ composes.traefik.ports.http.container }}"
       - "--entrypoints.https.address=:{{ composes.traefik.ports.https.container }}"
-      - --providers.docker
-      - --providers.docker.exposedByDefault=false
 {% if composes.traefik.provider_file is defined %}
       - "--providers.file=true"
       - "--providers.file.filename={{ composes.traefik.mounts.app.container }}/{{ composes.traefik.provider_file }}"
+{% else %}
+      - --providers.docker
+      - --providers.docker.exposedByDefault=false
 {% endif %}
       - --api
       - "--certificatesresolvers.letsencrypt.acme.email={{ composes.traefik.le_email }}"
@@ -28,7 +29,9 @@ services:
     networks:
       - traefik
     volumes:
+{% if composes.traefik.provider_file is not defined %}
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
+{% endif %}
       - "{{ composes.traefik.mounts.app.local }}/{{ ansible_host }}:{{ composes.traefik.mounts.app.container }}{{ composes.traefik.selinux | default('') }}"
 {% if composes.traefik.selinux is defined %}
     privileged: true
