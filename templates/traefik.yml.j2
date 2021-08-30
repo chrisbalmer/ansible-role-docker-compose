@@ -6,6 +6,7 @@ networks:
 services:
   app:
     image: "{{ composes.traefik.images.app }}"
+{% if composes.traefik.command|default(true) %}
     command:
       - "--entrypoints.http.address=:{{ composes.traefik.ports.http.container }}"
       - "--entrypoints.https.address=:{{ composes.traefik.ports.https.container }}"
@@ -23,13 +24,14 @@ services:
       - "--certificatesresolvers.letsencrypt.acme.dnschallenge.resolvers={{ composes.traefik.resolver1 }},{{ composes.traefik.resolver2 }}"
       - --certificatesresolvers.letsencrypt.acme.storage={{ composes.traefik.mounts.app.container }}/acme.json
       - --log.level=debug
+{% endif %}
     ports:
-      #- "{{ composes.traefik.ports.http.host }}:{{ composes.traefik.ports.http.container }}"
+      - "{{ composes.traefik.ports.http.host }}:{{ composes.traefik.ports.http.container }}"
       - "{{ composes.traefik.ports.https.host }}:{{ composes.traefik.ports.https.container }}"
     networks:
       - traefik
     volumes:
-{% if composes.traefik.provider_file is not defined %}
+{% if composes.traefik.provider_file is not defined and composes.traefik.command|default(true) %}
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
 {% endif %}
       - "{{ composes.traefik.mounts.app.local }}/{{ ansible_host }}:{{ composes.traefik.mounts.app.container }}{{ composes.traefik.selinux | default('') }}"
