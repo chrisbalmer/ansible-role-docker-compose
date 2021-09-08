@@ -45,6 +45,15 @@ services:
     depends_on:
       - "{{ composes.pihole.names.doh }}"
     restart: always
+{% if composes.pihole.splunk.hec_endpoint is defined %}
+    logging:
+      driver: splunk
+      options:
+        splunk-url: "{{ composes.pihole.splunk.hec_endpoint }}"
+        splunk-token: "{{ composes.pihole.splunk.hec_token }}"
+        splunk-insecureskipverify: "{{ composes.pihole.splunk.hec_skip_verify }}"
+        splunk-format: "{{ composes.pihole.splunk.hec_format }}"
+{% endif %}
 
   cloudflared:
     container_name: "{{ composes.pihole.names.doh }}"
@@ -55,3 +64,12 @@ services:
         ipv4_address: "{{ composes.pihole.dns_network.containerd_ip }}"
     command: "proxy-dns --port {{ composes.pihole.ports.doh.container }} --upstream {{ composes.pihole.upstream_1 }} --upstream {{ composes.pihole.upstream_2 }} --address=0.0.0.0"
     restart: always
+{% if composes.pihole.splunk.hec_endpoint is defined %}
+    logging:
+      driver: splunk
+      options:
+        splunk-url: "{{ composes.pihole.splunk.hec_endpoint }}"
+        splunk-token: "{{ composes.pihole.splunk.hec_token }}"
+        splunk-insecureskipverify: "{{ composes.pihole.splunk.hec_skip_verify }}"
+        splunk-format: "{{ composes.pihole.splunk.hec_format }}"
+{% endif %}

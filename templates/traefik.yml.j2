@@ -41,3 +41,12 @@ services:
     environment:
       - "DO_AUTH_TOKEN={{ composes.traefik.do_token }}"
     restart: unless-stopped
+{% if composes.traefik.splunk.hec_endpoint is defined %}
+    logging:
+      driver: splunk
+      options:
+        splunk-url: "{{ composes.traefik.splunk.hec_endpoint }}"
+        splunk-token: "{{ composes.traefik.splunk.hec_token }}"
+        splunk-insecureskipverify: "{{ composes.traefik.splunk.hec_skip_verify }}"
+        splunk-format: "{{ composes.traefik.splunk.hec_format }}"
+{% endif %}
