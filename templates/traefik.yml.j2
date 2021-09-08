@@ -23,7 +23,8 @@ services:
       - --certificatesresolvers.letsencrypt.acme.dnschallenge.provider=digitalocean
       - "--certificatesresolvers.letsencrypt.acme.dnschallenge.resolvers={{ composes.traefik.resolver1 }},{{ composes.traefik.resolver2 }}"
       - --certificatesresolvers.letsencrypt.acme.storage={{ composes.traefik.mounts.app.container }}/acme.json
-      - --log.level=debug
+      - --log.level={{ composes.traefik.log.level }}
+      - --log.format={{ composes.traefik.log.format }}
 {% endif %}
     ports:
       - "{{ composes.traefik.ports.http.host }}:{{ composes.traefik.ports.http.container }}"
